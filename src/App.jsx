@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
+import axios from 'axios';
 import ProgressCard from "./components/ProgressCard.jsx";
 import CheckInForm from "./components/CheckInForm.jsx";
 import CoachChat from "./components/CoachChat.jsx";
 import MoodTracker from "./components/MoodTracker.jsx";
-import { computeRisk } from "./lib/risk.js"; // ✅ fixed path
-import { useRiskModel } from "./ml/useRiskModel.js"; // ✅ ML hook
+import LoginForm from "./components/LoginForm.jsx";
+import { computeRisk } from "./lib/risk.js";
+import { useRiskModel } from "./ml/useRiskModel.js";
 
-// Small helper to create consistent tips based on the final risk & record
+// Helper function to generate tips based on the user's data
 function getTips(record, risk) {
   if (!record) return [];
   const base = [
@@ -25,13 +27,11 @@ function getTips(record, risk) {
   if (record.stress > 3)
     out.push("Practice deep breathing or a 5-min meditation.");
 
-  // Add at least 3 tips total
   while (out.length < 3) {
     const pick = base[Math.floor(Math.random() * base.length)];
     if (!out.includes(pick)) out.push(pick);
   }
 
-  // Optionally nudge more if risk is high
   if (risk === "High" && !out.some((t) => t.includes("breathing"))) {
     out.push("Schedule a short relaxation break this afternoon.");
   }
@@ -43,33 +43,56 @@ export default function App() {
   const [record, setRecord] = useState(null);
   const [risk, setRisk] = useState("Low");
   const [tips, setTips] = useState([]);
+  const [user, setUser] = useState(null);
+  const [error, setError] = useState("");
 
-  // ML model (trains in-browser, then predicts)
   const { ready, status, predictRisk } = useRiskModel();
 
-  // 1) Decide risk: prefer ML when ready; otherwise fallback to rules
-  useEffect(() => {
-    if (!record) return;
-    if (ready) {
-      const mlRisk = predictRisk(record);
-      if (mlRisk) {
-        setRisk(mlRisk);
-        return;
-      }
-    }
-    // fallback while model is training
-    setRisk(computeRisk(record));
-  }, [record, ready, predictRisk]);
-
-  // 2) Generate tips after risk is finalized
+  // This useEffect is now only for generating tips when the risk changes
   useEffect(() => {
     if (!record) return;
     setTips(getTips(record, risk));
   }, [record, risk]);
 
-  // 3) Handle form submit (just store today's record)
+  const handleLogin = (credentials) => {
+    axios.post('http://localhost:5000/api/login', credentials)
+      .then(res => {
+        setUser(res.data);
+        setError("");
+      })
+      .catch(() => {
+        setError("Invalid credentials. Please try again.");
+      });
+  };
+
   const handleCheckIn = (data) => {
-    setRecord(data);
+    const newRecord = { ...data, date: new Date().toLocaleDateString() };
+
+    // --- FIX IS HERE ---
+    // 1. Calculate the risk immediately
+    const calculatedRisk = ready ? (predictRisk(newRecord) || computeRisk(newRecord)) : computeRisk(newRecord);
+
+    // 2. Update all state at once for the UI
+    setRecord(newRecord);
+    setRisk(calculatedRisk); // Set the calculated risk for the UI
+
+    // 3. Send the complete, correct data to the backend
+    if (user) {
+      axios.post('http://localhost:5000/api/checkin', {
+          userId: user._id,
+          ...newRecord,
+          risk: calculatedRisk // Send the correct risk
+        })
+        .then(res => {
+          setUser(res.data);
+          console.log("Check-in saved to database.");
+        })
+        .catch(err => {
+          console.error("Error saving check-in:", err);
+          setError("Could not save your check-in data. Please try again later.");
+          // We no longer revert the UI, to prevent the flicker.
+        });
+    }
   };
 
   return (
@@ -79,24 +102,26 @@ export default function App() {
           🌱 Preventive Health Tracker
         </h1>
 
-        {/* Tiny status while the ML model trains */}
         {status !== "ready" && (
           <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
             Training mini health model…
           </p>
         )}
 
-        {/* Check-in Form */}
-        <CheckInForm onSubmit={handleCheckIn} />
-
-        {/* Mood Tracker */}
-        <MoodTracker />
-
-        {/* Progress Card */}
-        {record && <ProgressCard record={record} risk={risk} />}
-
-        {/* Coach Chat */}
-        {tips.length > 0 && <CoachChat risk={risk} tips={tips} />}
+        {!user ? (
+          <div>
+            <LoginForm onLogin={handleLogin} />
+            {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+          </div>
+        ) : (
+          <>
+            <p className="text-center text-lg">Welcome back, {user.name}!</p>
+            <CheckInForm onSubmit={handleCheckIn} />
+            <MoodTracker />
+            {record && <ProgressCard record={record} risk={risk} />}
+            {tips.length > 0 && <CoachChat risk={risk} tips={tips} />}
+          </>
+        )}
       </div>
     </div>
   );
