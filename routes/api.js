@@ -64,6 +64,43 @@ router.post('/checkin', (req, res) => {
         })
         .catch(err => res.status(404).json({ msg: 'User not found' }));
 });
+// routes/api.js
 
+// ... (keep all the other routes like /login and /checkin)
+
+// @route   GET api/healthdata/:userId
+// @desc    Get all health data for a user
+router.get('/healthdata/:userId', (req, res) => {
+  User.findById(req.params.userId)
+    .then(user => {
+      if (!user) return res.status(404).json({ msg: 'User not found' });
+      res.json(user.healthData);
+    })
+    .catch(err => res.status(500).json({ msg: 'Server error' }));
+});
+
+// @route   GET api/nutrition/:userId
+// @desc    Get all nutrition data for a user
+router.get('/nutrition/:userId', (req, res) => {
+  User.findById(req.params.userId)
+    .then(user => {
+      if (!user) return res.status(404).json({ msg: 'User not found' });
+      res.json(user.nutrition);
+    })
+    .catch(() => res.status(500).json({ msg: 'Server error' }));
+});
+
+// @route   POST api/nutrition
+// @desc    Add a new meal log for a user
+router.post('/nutrition', (req, res) => {
+  const { userId, mealType, description, balance } = req.body;
+  User.findById(userId)
+    .then(user => {
+      user.nutrition.push({ mealType, description, balance, date: new Date() });
+      user.save().then(updatedUser => res.json(updatedUser.nutrition));
+    })
+    .catch(() => res.status(404).json({ msg: 'User not found' }));
+});
+ // This line should be at the very end
 
 export default router; // Changed from module.exports

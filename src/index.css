@@ -3,93 +3,38 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light dark;
+  --bg-light: #eef0f5;
+  --bg-dark: #1a1a1a;
+  --text-light: #333;
+  --text-dark: #f1f1f1;
+  --primary: #2563eb;
+  --primary-dark: #34d399;
 }
 
 body {
-  @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 transition-colors duration-500;
+  @apply transition-colors duration-500;
+  background-color: var(--bg-light);
+  color: var(--text-light);
 }
 
-/* Glass effect utility */
+body.dark {
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+}
+
+/* Updated, softer "glass" effect */
 .glass-card {
-  @apply bg-white/40 dark:bg-gray-800/40 border border-white/20 dark:border-gray-700/40 rounded-2xl shadow-lg backdrop-blur-md;
+  @apply bg-white/60 dark:bg-gray-800/40 border border-white/20 dark:border-gray-700/40 rounded-2xl shadow-lg backdrop-blur-lg;
+  /* Soft neumorphic shadow for light mode */
+  box-shadow: 8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff;
 }
 
-/* Smooth scroll + fonts */
+.dark .glass-card {
+  /* Dark mode shadow */
+  box-shadow: 8px 8px 16px rgba(0,0,0,0.3), -8px -8px 16px rgba(45,45,45,0.5);
+}
+
 html {
   scroll-behavior: smooth;
   font-family: "Inter", sans-serif;
-}
-
-/* ---------------------- */
-/* ✨ Custom Effects ✨    */
-/* ---------------------- */
-
-/* Hover glow */
-.glow-hover {
-  transition: all 0.3s ease;
-}
-.glow-hover:hover {
-  box-shadow: 0 0 15px rgba(28, 82, 132, 0.6);
-}
-
-/* Ripple effect */
-.ripple {
-  position: relative;
-  overflow: hidden;
-}
-.ripple::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  transform: scale(0);
-  opacity: 0.6;
-  background: rgba(57, 226, 64, 0.4);
-  animation: ripple 0.6s linear;
-}
-@keyframes ripple {
-  to {
-    transform: scale(4);
-    opacity: 0;
-  }
-}
-
-/* Pulse */
-.pulse {
-  animation: pulse 1.5s infinite;
-}
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-
-/* Hover scale */
-.hover-scale {
-  transition: transform 0.3s ease;
-}
-.hover-scale:hover {
-  transform: scale(1.02);
-}
-
-/* Gradient animate */
-.gradient-animate {
-  background: linear-gradient(90deg, #1c5284, #39e240, #e6e8ef);
-  background-size: 200% 200%;
-  animation: gradientShift 6s ease infinite;
-}
-@keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
 }

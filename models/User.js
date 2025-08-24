@@ -27,6 +27,12 @@ const UserSchema = new Schema({
     stress: Number,
     risk: String,
   }],
+  nutrition: [{
+    date: { type: Date, default: Date.now },
+    mealType: { type: String, enum: ['Breakfast', 'Lunch', 'Dinner', 'Snack'], required: true },
+    description: { type: String, required: true },
+    balance: { type: String, default: 'Balanced' }
+  }],
 });
 
 const User = model('user', UserSchema);
