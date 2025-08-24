@@ -23,7 +23,6 @@ ChartJS.register(
 );
 
 export default function TrendChart({ historicalData, metric, title, color }) {
-  // Show a message if there isn't enough data to plot a meaningful chart
   if (!historicalData || historicalData.length < 2) {
     return (
       <div className="glass-card p-6 w-full text-center">
@@ -34,7 +33,6 @@ export default function TrendChart({ historicalData, metric, title, color }) {
     );
   }
 
-  // Prepare the data for the chart
   const chartData = {
     labels: historicalData.map(d => new Date(d.date).toLocaleDateString()),
     datasets: [
@@ -42,7 +40,7 @@ export default function TrendChart({ historicalData, metric, title, color }) {
         label: `${title} Levels`,
         data: historicalData.map(d => d[metric]),
         borderColor: color,
-        backgroundColor: `${color}80`, // Add transparency to the color
+        backgroundColor: `${color}80`,
         tension: 0.3,
         fill: true,
       },
@@ -54,7 +52,7 @@ export default function TrendChart({ historicalData, metric, title, color }) {
     responsive: true,
     plugins: {
       legend: {
-        display: false, // Hide the legend as the title is clear enough
+        display: false,
       },
       title: {
         display: true,
@@ -66,6 +64,27 @@ export default function TrendChart({ historicalData, metric, title, color }) {
           bottom: 20,
         }
       },
+      // ADDED THIS TOOLTIP CONFIGURATION
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#333',
+        bodyColor: '#666',
+        borderColor: '#ddd',
+        borderWidth: 1,
+        padding: 10,
+        callbacks: {
+          label: function (context) {
+            let label = context.dataset.label || '';
+            if (label) {
+              label += ': ';
+            }
+            if (context.parsed.y !== null) {
+              label += new Intl.NumberFormat('en-US').format(context.parsed.y);
+            }
+            return label;
+          }
+        }
+      }
     },
     scales: {
       y: {

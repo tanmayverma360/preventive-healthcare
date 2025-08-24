@@ -39,9 +39,9 @@ export default function StressTrendChart({ data }) {
       {
         label: 'Stress Level',
         data: data.map(d => d.stress),
-        borderColor: 'rgb(239, 68, 68)', // A reddish color for stress
+        borderColor: 'rgb(239, 68, 68)',
         backgroundColor: 'rgba(239, 68, 68, 0.5)',
-        tension: 0.3, // Makes the line curved
+        tension: 0.3,
       },
     ],
   };
@@ -59,11 +59,33 @@ export default function StressTrendChart({ data }) {
           size: 18,
         }
       },
+      // ADDED THIS TOOLTIP CONFIGURATION
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#333',
+        bodyColor: '#666',
+        borderColor: '#ddd',
+        borderWidth: 1,
+        padding: 10,
+        callbacks: {
+          label: function (context) {
+            let label = context.dataset.label || '';
+            if (label) {
+              label += ': ';
+            }
+            if (context.parsed.y !== null) {
+              // Adding a rating description for stress
+              label += `${context.parsed.y} / 5`;
+            }
+            return label;
+          }
+        }
+      }
     },
     scales: {
       y: {
         beginAtZero: true,
-        max: 5, // Stress is on a 1-5 scale
+        max: 5,
       },
     },
   };

@@ -82,22 +82,38 @@ export default function App() {
         }
     };
 
-    const handleAddMeal = (mealData) => {
-        const newMeal = { ...mealData, date: new Date().toISOString() };
-        setNutritionData(prevData => [...prevData, newMeal]);
+    // src/App.jsx
 
-        if (user) {
-            axios.post('http://localhost:5000/api/nutrition', { userId: user._id, ...newMeal })
-                .then(res => {
-                    console.log("Meal saved to database.");
-                })
-                .catch(err => {
-                    console.error("Error saving meal:", err);
-                    setNutritionData(prevData => prevData.filter(m => m.date !== newMeal.date));
-                });
-        }
+  const handleAddMeal = (mealData) => {
+    if (!user) return;
+
+    // --- THIS IS THE FIX ---
+
+    // 1. Create the new meal object on the client-side.
+    const newMeal = {
+      ...mealData,
+      date: new Date().toISOString(), // Use ISO string for consistency
     };
 
+    // 2. Optimistically update the UI.
+    // This adds the new meal to the list immediately for a snappy user experience.
+    setNutritionData(prevData => [...prevData, newMeal]);
+
+    // 3. Send the data to the server in the background.
+    axios.post('http://localhost:5000/api/nutrition', { userId: user._id, ...mealData })
+      .then(res => {
+        // 4. (Optional but recommended) Re-sync the state with the server's response.
+        // This ensures the data is perfectly in sync with the database.
+        setNutritionData(res.data);
+        console.log("Meal saved and log synced with database.");
+      })
+      .catch(err => {
+        console.error("Error saving meal:", err);
+        // If the save fails, remove the meal we optimistically added.
+        setNutritionData(prevData => prevData.filter(meal => meal.date !== newMeal.date));
+        setError("Could not save your meal. Please try again.");
+      });
+  };
     const tabs = [
         { name: 'Dashboard' },
         { name: 'Trends' },
